@@ -1,0 +1,22 @@
+mutation SeedData @auth(level: USER) {
+  billingCycle_insertMany(data: [
+    {
+      name: "Monthly",
+      durationInDays: 30
+    },
+    {
+      name: "Annual",
+      durationInDays: 365
+    }
+  ])
+  subscriptionType_insertMany(data: [
+    {
+      name: "Basic",
+      description: "Basic subscription"
+    },
+    {
+      name: "Premium",
+      description: "Premium subscription"
+    }
+  ])
+}

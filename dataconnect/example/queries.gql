@@ -1,0 +1,24 @@
+mutation CreateInstance($instanceName: String!) @auth(level: USER) {
+  instance_insert(data: {
+    instanceName: $instanceName,
+    ownerUid_expr: "auth.uid"
+  })
+}
+
+query GetInstance($instanceId: UUID!) @auth(level: USER) {
+  instance(key: {id: $instanceId}) {
+    id
+    instanceName
+    ownerUid
+  }
+}
+
+mutation UpdateInstance($instanceId: UUID!, $instanceName: String) @auth(level: USER) {
+  instance_update(key: {id: $instanceId}, data: {
+    instanceName: $instanceName
+  })
+}
+
+mutation DeleteInstance($instanceId: UUID!) @auth(level: USER, expr: "query GetInstance($instanceId: UUID!) {instance(key: {id: $instanceId}) {ownerUid}} == auth.uid") {
+  instance_delete(key: {id: $instanceId})
+}
