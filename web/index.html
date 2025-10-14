@@ -1,74 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>ceelo_web</title>
-  <!-- Add other meta tags or links here -->
-</head>
-<body>
-  <!-- Your HTML content -->
-
-  <!-- Firebase configuration script -->
-  <script type="module">
-    // Import the functions you need from the SDKs you need
-    import { initializeApp } from "firebase/app";
-    import { getAnalytics } from "firebase/analytics";
-    // TODO: Add SDKs for Firebase products that you want to use
-    // https://firebase.google.com/docs/web/setup#available-libraries
-
-    // Your web app's Firebase configuration
-    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-    const firebaseConfig = {
-      apiKey: "AIzaSyAfoIS3SQ4OCwEU5TLrTkVgN9JAI6aajL0",
-      authDomain: "ceelo-9e512.firebaseapp.com",
-      projectId: "ceelo-9e512",
-      storageBucket: "ceelo-9e512.firebasestorage.app",
-      messagingSenderId: "599179747543",
-      appId: "1:599179747543:web:75aac5bef4a752b5c4d092",
-      measurementId: "G-BJS2HCBFHS"
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-
-  // If you are serving your web app in a path other than the root, change the
-  // href value below to reflect the base path you are serving from.
-  //
-  // The path provided below has to start and end with a slash "/" in order for
-  // it to work correctly.
-  //
-  // For more details:
-  // * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-  //
-  // This is a placeholder for base href that will be replaced by the value of
-  // the `--base-href` argument provided to `flutter build`.
-
-<!DOCTYPE html>
-<html>
-<head>
-  <!-- Base href for the application -->
-  < base href="$FLUTTER_BASE_HREF" />
-
-  <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
-
-  <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="ceelo_web">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
-
-  <title>ceelo_web</title>
-  <link rel="manifest" href="manifest.json">
-</head>
-<body>
-  <script src="flutter_bootstrap.js" async></script>
-</body>
-</html>
   <base href="$FLUTTER_BASE_HREF" />
 
   <meta charset="UTF-8">
@@ -88,6 +20,29 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <!-- Firebase configuration script -->
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-analytics.js";
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAfoIS3SQ4OCwEU5TLrTkVgN9JAI6aajL0",
+      authDomain: "ceelo-9e512.firebaseapp.com",
+      projectId: "ceelo-9e512",
+      storageBucket: "ceelo-9e512.firebasestorage.app",
+      messagingSenderId: "599179747543",
+      appId: "1:599179747543:web:75aac5bef4a752b5c4d092",
+      measurementId: "G-BJS2HCBFHS"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+  </script>
+
+  <!-- Flutter bootstrap script -->
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

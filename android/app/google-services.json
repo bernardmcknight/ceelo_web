@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "599179747543",
+    "project_id": "ceelo-9e512",
+    "storage_bucket": "ceelo-9e512.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:599179747543:android:094d836a028c03a3c4d092",
+        "android_client_info": {
+          "package_name": "com.example.ceelo_web"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_9AinIThoyIV15cZfvGaJbthXq1Muj7M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

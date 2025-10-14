@@ -3,3 +3,9 @@ generate:
   dartSdk:
     - outputDir: ../../lib/dataconnect_generated
       package: dataconnect_generated
+  javascriptSdk:
+    - outputDir: ../../src/dataconnect-generated
+      package: "@dataconnect/generated"
+      packageJsonDir: ../..
+      react: false
+      angular: false
