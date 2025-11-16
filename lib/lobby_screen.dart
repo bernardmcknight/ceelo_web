@@ -14,7 +14,7 @@ class LobbyScreen extends StatefulWidget {
 
 class LobbyScreenState extends State<LobbyScreen>{
   late Stream<DocumentSnapshot>? lobbyStream;
-  late String currentUserId;
+  String? currentUserId;
   final TextEditingController _lobbyNameController = TextEditingController();
   final TextEditingController _joinLobbyIdController = TextEditingController();
   bool hasJoinedLobby = false;
@@ -22,7 +22,13 @@ class LobbyScreenState extends State<LobbyScreen>{
   @override
   void initState() {
     super.initState();
-    currentUserId = FirebaseAuth.instance.currentUser!.uid;
+    final user = FirebaseAuth.instance.currentUser;
+
+    if(user == null){
+      currentUserId = null;
+    }else{
+      currentUserId = user.uid;
+    
     if(widget.lobbyId.isNotEmpty){
       hasJoinedLobby = true;
       lobbyStream = FirebaseFirestore.instance
@@ -30,7 +36,7 @@ class LobbyScreenState extends State<LobbyScreen>{
         .doc(widget.lobbyId)
         .snapshots();
     }
-    
+    }
   }
 
   Future<void> startGame(DocumentSnapshot lobbySnapshot) async {
@@ -72,7 +78,7 @@ class LobbyScreenState extends State<LobbyScreen>{
       'lobbyId': doc.id,
       'lobbyName': name,
       'hostId': uid,
-      'players': [uid],
+      'players': [uid], 
       'gameStarted': false,
       'roomId': null,
       'createdAt': FieldValue.serverTimestamp(),
@@ -137,7 +143,15 @@ class LobbyScreenState extends State<LobbyScreen>{
   
   @override
   Widget build(BuildContext context){
-    if(!hasJoinedLobby){
+    if(currentUserId == null){
+      return const Scaffold(
+        body: Center(
+          child: Text("Please log in to continue.", style: TextStyle(color: Colors.white)),
+        ),
+        backgroundColor: Colors.blueGrey,
+      );
+    }
+    if(!hasJoinedLobby || lobbyStream == null){
       return Scaffold(
         backgroundColor: Colors.blueGrey[900],
         appBar: AppBar(title: const Text("Cee-Lo Lobby"), backgroundColor: Colors.redAccent),
@@ -186,7 +200,7 @@ class LobbyScreenState extends State<LobbyScreen>{
         backgroundColor: Colors.redAccent,
       ),
       body: StreamBuilder<DocumentSnapshot>(
-        stream: lobbyStream,
+        stream: lobbyStream!,
         builder: (context, snapshot){
           if(!snapshot.hasData) return const Center(child: CircularProgressIndicator());
           final lobby = snapshot.data!;
