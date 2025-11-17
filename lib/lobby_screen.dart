@@ -11,10 +11,9 @@ class LobbyScreen extends StatefulWidget {
  @override
   State<LobbyScreen> createState() => LobbyScreenState();
 }
-
 class LobbyScreenState extends State<LobbyScreen>{
-  late Stream<DocumentSnapshot>? lobbyStream;
-  String? currentUserId;
+  Stream<DocumentSnapshot>? lobbyStream;
+  late String currentUserId;
   final TextEditingController _lobbyNameController = TextEditingController();
   final TextEditingController _joinLobbyIdController = TextEditingController();
   bool hasJoinedLobby = false;
@@ -22,21 +21,15 @@ class LobbyScreenState extends State<LobbyScreen>{
   @override
   void initState() {
     super.initState();
-    final user = FirebaseAuth.instance.currentUser;
-
-    if(user == null){
-      currentUserId = null;
-    }else{
-      currentUserId = user.uid;
-    
-    if(widget.lobbyId.isNotEmpty){
-      hasJoinedLobby = true;
+    currentUserId = FirebaseAuth.instance.currentUser!.uid;
+    if(widget.lobbyId.isEmpty){
+      hasJoinedLobby = false;
       lobbyStream = FirebaseFirestore.instance
         .collection('lobbies')
         .doc(widget.lobbyId)
         .snapshots();
     }
-    }
+    
   }
 
   Future<void> startGame(DocumentSnapshot lobbySnapshot) async {
@@ -58,12 +51,7 @@ class LobbyScreenState extends State<LobbyScreen>{
         .update({'gameStarted': true, 'roomId': roomRef.id,
         });
     // Navigate to RoomScreen
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => RoomScreen(roomId: roomRef.id),
-      ),
-    );
+    Navigator.pushReplacementNamed(context, '/room', arguments: roomRef.id);
   }
   Future<void> createLobby() async {
     final uid = FirebaseAuth.instance.currentUser!.uid;
@@ -78,7 +66,7 @@ class LobbyScreenState extends State<LobbyScreen>{
       'lobbyId': doc.id,
       'lobbyName': name,
       'hostId': uid,
-      'players': [uid], 
+      'players': [uid],
       'gameStarted': false,
       'roomId': null,
       'createdAt': FieldValue.serverTimestamp(),
@@ -117,7 +105,6 @@ class LobbyScreenState extends State<LobbyScreen>{
       _showError("You are already in this lobby.");
       return;
     }
-  
     players.add(uid);
     await lobbyRef.update({'players': players});
 
@@ -140,18 +127,9 @@ class LobbyScreenState extends State<LobbyScreen>{
       SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
     );
   }
-  
   @override
   Widget build(BuildContext context){
-    if(currentUserId == null){
-      return const Scaffold(
-        body: Center(
-          child: Text("Please log in to continue.", style: TextStyle(color: Colors.white)),
-        ),
-        backgroundColor: Colors.blueGrey,
-      );
-    }
-    if(!hasJoinedLobby || lobbyStream == null){
+    if(!hasJoinedLobby){
       return Scaffold(
         backgroundColor: Colors.blueGrey[900],
         appBar: AppBar(title: const Text("Cee-Lo Lobby"), backgroundColor: Colors.redAccent),
@@ -200,7 +178,7 @@ class LobbyScreenState extends State<LobbyScreen>{
         backgroundColor: Colors.redAccent,
       ),
       body: StreamBuilder<DocumentSnapshot>(
-        stream: lobbyStream!,
+        stream: lobbyStream,
         builder: (context, snapshot){
           if(!snapshot.hasData) return const Center(child: CircularProgressIndicator());
           final lobby = snapshot.data!;
@@ -211,12 +189,7 @@ class LobbyScreenState extends State<LobbyScreen>{
           if(isStarted){
             // If already started, navigate to RoomScreen
             Future.microtask((){
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => RoomScreen(roomId: lobby['roomId']),
-                ),
-              );
+              Navigator.pushReplacementNamed(context, '/room', arguments: lobby['roomId']);
             });
             return const Center(child: Text("Starting  game...", style: TextStyle(color: Colors.white)));
           }
@@ -243,4 +216,3 @@ class LobbyScreenState extends State<LobbyScreen>{
     );
   }
 }
-
