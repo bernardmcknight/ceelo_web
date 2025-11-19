@@ -24,16 +24,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: LobbyScreen(lobbyId: "Test Lobby",),
       initialRoute: '/login', // Set the initial route to the login screen
       routes: {
         '/login': (context) => LoginScreen(), //Define your login screen here
         '/register': (context) => RegisterPage(), // Define your registration screen here
         '/mainmenu': (context) => MainMenuScreen(), // Define your game screen here
-        '/lobby': (context){
-          final args = ModalRoute.of(context)!.settings.arguments as String;
-          return LobbyScreen(lobbyId: args);
-          }, // Pass lobbyId as argument
+        '/lobby': (context) => LobbyScreen(), // Define your lobby screen here
         '/room': (context){
           final roomId = ModalRoute.of(context)!.settings.arguments as String;
           return RoomScreen(roomId: roomId);

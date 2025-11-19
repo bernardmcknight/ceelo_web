@@ -1,217 +1,193 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:ceelo_web/room_screen.dart';
+
+import 'room_screen.dart';
 
 class LobbyScreen extends StatefulWidget {
-  final String lobbyId;
-
-  const LobbyScreen({super.key, required this.lobbyId});
- 
- @override
-  State<LobbyScreen> createState() => LobbyScreenState();
-}
-class LobbyScreenState extends State<LobbyScreen>{
-  Stream<DocumentSnapshot>? lobbyStream;
-  late String currentUserId;
-  final TextEditingController _lobbyNameController = TextEditingController();
-  final TextEditingController _joinLobbyIdController = TextEditingController();
-  bool hasJoinedLobby = false;
+  const LobbyScreen({super.key});
 
   @override
-  void initState() {
-    super.initState();
-    currentUserId = FirebaseAuth.instance.currentUser!.uid;
-    if(widget.lobbyId.isEmpty){
-      hasJoinedLobby = false;
-      lobbyStream = FirebaseFirestore.instance
-        .collection('lobbies')
-        .doc(widget.lobbyId)
-        .snapshots();
-    }
-    
-  }
+  State<LobbyScreen> createState() => _LobbyScreenState();
+}
 
-  Future<void> startGame(DocumentSnapshot lobbySnapshot) async {
-    final roomRef = FirebaseFirestore.instance.collection('rooms').doc();
+class _LobbyScreenState extends State<LobbyScreen> {
+  final TextEditingController _roomNameController = TextEditingController();
+  final TextEditingController _roomCodeController = TextEditingController();
+  bool _isBusy = false;
 
-    await roomRef.set({
-      'roomId': roomRef.id,
-      'players': lobbySnapshot['players'],
-      'createdAt': FieldValue.serverTimestamp(),
-      'gameStatus': 'waiting',
-      'diceValues':[1,1,1],
-      'currentTurn': lobbySnapshot['players'][0],
-    });
-
-    // Update lobby to indicate game has started
-    await FirebaseFirestore.instance
-        .collection('lobbies')
-        .doc(widget.lobbyId)
-        .update({'gameStarted': true, 'roomId': roomRef.id,
-        });
-    // Navigate to RoomScreen
-    Navigator.pushReplacementNamed(context, '/room', arguments: roomRef.id);
-  }
-  Future<void> createLobby() async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    final name = _lobbyNameController.text.trim();
-
-    if(name.isEmpty){
-      _showError("Enter a lobby name.");
-      return;
-    }
-    final doc = FirebaseFirestore.instance.collection('lobbies').doc();
-    await doc.set({
-      'lobbyId': doc.id,
-      'lobbyName': name,
-      'hostId': uid,
-      'players': [uid],
-      'gameStarted': false,
-      'roomId': null,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-    setState((){
-      hasJoinedLobby = true;
-      lobbyStream = FirebaseFirestore.instance
-        .collection('lobbies')
-        .doc(doc.id)
-        .snapshots();
-    });
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => LobbyScreen(lobbyId: doc.id),
-      ),
-    );
-  }
-  Future <void> joinLobby() async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    final lobbyId = _joinLobbyIdController.text.trim();
-
-    if(lobbyId.isEmpty){
-      _showError("Enter a valid lobby ID.");
-      return;
-    }
-    final lobbyRef = FirebaseFirestore.instance.collection('lobbies').doc(lobbyId);
-    final lobbySnapshot = await lobbyRef.get();
-
-    if(!lobbySnapshot.exists){
-      _showError("Lobby not found.");
-      return;
-    }
-    final players = List<String>.from(lobbySnapshot['players'] ?? []);
-    if(players.contains(uid)){
-      _showError("You are already in this lobby.");
-      return;
-    }
-    players.add(uid);
-    await lobbyRef.update({'players': players});
-
-    setState((){
-      hasJoinedLobby = true;
-      lobbyStream = FirebaseFirestore.instance
-        .collection('lobbies')
-        .doc(lobbyId)
-        .snapshots();
-    });
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => LobbyScreen(lobbyId: lobbyId),
-      ),
-    );
-  }
-  void _showError(String message){
+  void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
     );
   }
-  @override
-  Widget build(BuildContext context){
-    if(!hasJoinedLobby){
-      return Scaffold(
-        backgroundColor: Colors.blueGrey[900],
-        appBar: AppBar(title: const Text("Cee-Lo Lobby"), backgroundColor: Colors.redAccent),
-        body: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: [
-              TextField(
-                controller: _lobbyNameController,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  hintText: "Room Name",
-                  filled: true,
-                  fillColor: Colors.white12,
-                  ),
-                ),
-              const SizedBox(height:20),
-              ElevatedButton(
-                onPressed: createLobby,
-                child: const Text("Create Room")),
 
-              const Divider(color: Colors.white),
-
-              const Text("Join a Lobby by ID", style: TextStyle(color: Colors.white)),
-              TextField(
-                controller: _joinLobbyIdController,
-                decoration: const InputDecoration(
-                  hintText: "Lobby ID",
-                  filled: true,
-                  fillColor: Colors.white,
-                  ),
-                ),
-              const SizedBox(height:20),
-              ElevatedButton(
-                onPressed: joinLobby,
-                child: const Text("Join Room")),
-            ],
-          ),  
-        ),  
-      );  
+  Future<void> _createRoom() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      _showError("You must be logged in to create a room.");
+      return;
     }
+
+    final name = _roomNameController.text.trim();
+    if (name.isEmpty) {
+      _showError("Enter a room name.");
+      return;
+    }
+
+    setState(() => _isBusy = true);
+
+    try {
+      final roomRef =
+          FirebaseFirestore.instance.collection('rooms').doc();
+
+      await roomRef.set({
+        'roomId': roomRef.id,
+        'roomName': name,
+        'players': [user.uid],
+        'createdAt': FieldValue.serverTimestamp(),
+        'gameStatus': 'waiting',
+        'currentTurn': user.uid,
+        'diceValues': [1, 1, 1],
+        'playerStates': {
+          user.uid: {
+            'diceValues': [1, 1, 1],
+            'updatedAt': FieldValue.serverTimestamp(),
+          }
+        },
+      });
+
+      // Go straight to RoomScreen
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => RoomScreen(roomId: roomRef.id),
+        ),
+      );
+    } catch (e) {
+      _showError("Failed to create room: $e");
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
+    }
+  }
+
+  Future<void> _joinRoom() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      _showError("You must be logged in to join a room.");
+      return;
+    }
+
+    final code = _roomCodeController.text.trim();
+    if (code.isEmpty) {
+      _showError("Enter a room code.");
+      return;
+    }
+
+    setState(() => _isBusy = true);
+
+    try {
+      final roomRef =
+          FirebaseFirestore.instance.collection('rooms').doc(code);
+      final snap = await roomRef.get();
+
+      if (!snap.exists) {
+        _showError("Room not found.");
+        setState(() => _isBusy = false);
+        return;
+      }
+
+      final data = snap.data() as Map<String, dynamic>;
+      final players = List<String>.from(data['players'] ?? []);
+
+      if (!players.contains(user.uid)) {
+        players.add(user.uid);
+        await roomRef.update({
+          'players': players,
+          'playerStates.${user.uid}': {
+            'diceValues': [1, 1, 1],
+            'updatedAt': FieldValue.serverTimestamp(),
+          },
+        });
+      }
+
+      // Go straight to RoomScreen
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => RoomScreen(roomId: roomRef.id),
+        ),
+      );
+    } catch (e) {
+      _showError("Failed to join room: $e");
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.blueGrey[900],
       appBar: AppBar(
-        title: const Text("Dice Lobby"),
+        title: const Text("Cee-Lo Lobby"),
         backgroundColor: Colors.redAccent,
       ),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: lobbyStream,
-        builder: (context, snapshot){
-          if(!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-          final lobby = snapshot.data!;
-          final List<dynamic> players = lobby['players'] ?? [];
-          final bool isHost = lobby['hostId'] == currentUserId;
-          final bool isStarted = lobby['gameStarted'] ?? false;
-
-          if(isStarted){
-            // If already started, navigate to RoomScreen
-            Future.microtask((){
-              Navigator.pushReplacementNamed(context, '/room', arguments: lobby['roomId']);
-            });
-            return const Center(child: Text("Starting  game...", style: TextStyle(color: Colors.white)));
-          }
-
-          return Column(
+      body: AbsorbPointer(
+        absorbing: _isBusy,
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
             children: [
-              const SizedBox(height:20),
-              Text("Lobby: ${lobby['lobbyName']}", style: const TextStyle(color: Colors.white, fontSize: 24)),
-              const Divider(color: Colors.white38),
-              ...players.map((uid)=> ListTile(
-                title: Text(uid, style: const TextStyle(color: Colors.white)),
-              )),
-              const Spacer(),
-              if(isHost)
-                ElevatedButton(
-                  onPressed: players.length >= 2 ? () => startGame(lobby) : null,
-                  child: const Text("Start Game"),
+              // CREATE ROOM
+              TextField(
+                controller: _roomNameController,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  labelText: "Room Name",
+                  labelStyle: TextStyle(color: Colors.white70),
+                  filled: true,
+                  fillColor: Colors.white12,
                 ),
-              const SizedBox(height:30),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _createRoom,
+                child: const Text("Create Room"),
+              ),
+              const SizedBox(height: 30),
+              const Divider(color: Colors.white38),
+              const SizedBox(height: 10),
+
+              // JOIN ROOM
+              const Text(
+                "Join Existing Room by Code (Room ID)",
+                style: TextStyle(color: Colors.white),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _roomCodeController,
+                style: const TextStyle(color: Colors.black),
+                decoration: const InputDecoration(
+                  hintText: "Enter Room ID",
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _joinRoom,
+                child: const Text("Join Room"),
+              ),
+
+              const SizedBox(height: 20),
+              if (_isBusy)
+                const CircularProgressIndicator(),
             ],
-          );
-        },
+          ),
+        ),
       ),
     );
   }

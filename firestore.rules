@@ -12,7 +12,9 @@ service cloud.firestore {
       allow read, write: if request.auth != false;
     }
     match /lobbies/{lobbyId} {
-      allow read, write: If request.auth != false;
+      allow read, write: if request.auth != false;
+      allow create: if request.auth != null && request.resource.data.hostId == request.auth.uid;
+      allow read, update, delete: if request.auth != null && resource.data.hostId == request.auth.uid;
     }
     match /rooms/{roomId} {
       allow read, write: if request.auth != false;

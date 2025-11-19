@@ -75,7 +75,8 @@ class MainMenuScreen extends StatelessWidget{
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder:(context) =>  LobbyScreen(lobbyId: lobbyId)),
+                      MaterialPageRoute(builder:(context) =>  LobbyScreen()
+                      ),
                     );
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
